@@ -53,3 +53,20 @@ def stream_video(filename: str, request: Request):
         return JSONResponse({"error": "File not found"}, status_code=404)
     return FileResponse(video_path, media_type="video/mp4")
 
+#Add Video Upload Endpoint
+@app.post("/upload")
+async def upload_video(file: UploadFile = File(...)):
+    video_id = str(uuid.uuid4())
+    file_path = os.path.join(STORAGE_DIR, f"{video_id}_{file.filename}")
+    print(f"[UPLOAD] Received file: {file.filename}")
+    try:
+        async with aiofiles.open(file_path, "wb") as out_file:
+            content = await file.read()
+            await out_file.write(content)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=500)
+    client_states[video_id] = {"status": {"enhancement": False, "metadata": False}, "filename": file.filename, "filepath": file_path, "websocket": None, "metadata": None}
+    await publish_to_rabbitmq({"video_id": video_id, "filepath": file_path, "filename": file.filename})
+    return JSONResponse({"video_id": video_id, "message": "Video uploaded successfully"})
+
+
