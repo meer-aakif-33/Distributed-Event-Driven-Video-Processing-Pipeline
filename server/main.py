@@ -40,3 +40,16 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     print(f"[RESPONSE] {request.method} {request.url} -> {response.status_code}")
     return response
+
+
+@app.get("/")
+def root():
+    return {"message": "Server is running"}
+
+@app.get("/video/{filename}")
+def stream_video(filename: str, request: Request):
+    video_path = f"static/storage/{filename}"
+    if not os.path.exists(video_path):
+        return JSONResponse({"error": "File not found"}, status_code=404)
+    return FileResponse(video_path, media_type="video/mp4")
+
