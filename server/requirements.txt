@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+aiofiles
+aio_pika
+requests
+pika
+opencv-python
+python-multipart
+
+
