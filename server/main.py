@@ -1,4 +1,4 @@
-from fastapi import Request, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect
+from fastapi import Request, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -156,7 +156,9 @@ async def maybe_notify_client(video_id: str):
                         "enhancement": state.get("enhancement_metadata", {}),
                         "metadata_extraction": state.get("metadata", {}),
                     },
-                    "enhanced_video_url": f"http://localhost:8000/static/storage/{state['enhanced_filename']}"
+
+                    "enhanced_video_url": f"http://localhost:8000/video/{state['enhanced_filename']}"
+
                 })
                 print(f"[MAYBE_NOTIFY] Notification sent for {video_id}")
             except Exception as e:
@@ -201,4 +203,25 @@ async def metadata_status_update(request: Request):
 
     await maybe_notify_client(video_id)
     return {"message": "Metadata status updated."}
+
+@app.get("/download/{filename}")
+async def download_video(filename: str):
+    video_path = os.path.join(STORAGE_DIR, filename)
+    print(f"[DOWNLOAD] Requested: {filename}")
+    print(f"[DOWNLOAD] Resolved path: {video_path}")
+    if not os.path.exists(video_path):
+        print("[ERROR] File not found.")
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    return FileResponse(
+        video_path,
+        media_type="video/mp4",
+        filename=filename,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache, no-store, must-revalidate",
+            "Pragma": "no-cache",
+            "Expires": "0"
+        }
+    )
 
