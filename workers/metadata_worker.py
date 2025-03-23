@@ -9,7 +9,7 @@ QUEUE_NAME = 'video_tasks'
 FASTAPI_STATUS_URL = 'http://localhost:8000/internal/metadata-extraction-status'
 STORAGE_PATH = './static/storage'
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # Go up one level
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
 
 def extract_metadata(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -34,15 +34,15 @@ def extract_metadata(video_path):
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
-        print(f"Incoming message: {data}")
+        print(f"[Incoming message] {data}")
 
         raw_path = data.get("filepath")
         video_id = data.get("video_id")
 
         normalized_path = os.path.normpath(os.path.join(PROJECT_ROOT, raw_path))
         
-        print(f"Looking for: {normalized_path}")
-        print(f"Current working directory: {os.getcwd()}")
+        print(f"[Looking for] {normalized_path}")
+        print(f"[Current working directory] {os.getcwd()}")
 
         if os.path.exists(normalized_path):
             metadata = extract_metadata(normalized_path)
@@ -56,17 +56,16 @@ def callback(ch, method, properties, body):
             except Exception as e:
                 print("Failed to notify FastAPI:", e)
         else:
-            print(f"Video not found at path: {normalized_path}")
+            print(f"[Video not found] Path: {normalized_path}")
 
     except Exception as err:
         print("Error while handling task:", err)
         print("Raw message body:", body)
 
-
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
-    channel.exchange_declare(exchange='video_tasks', exchange_type='fanout')
+    exchange = channel.exchange_declare(exchange='video_tasks', exchange_type='fanout')
     result = channel.queue_declare(queue='', exclusive=True)
     queue_name = result.method.queue
 
@@ -74,7 +73,7 @@ def main():
 
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
-    print("Metadata Worker is ready. Waiting for tasks...")
+    print("[Metadata Worker is ready] Waiting for tasks...")
     channel.start_consuming()
 
 if __name__ == "__main__":

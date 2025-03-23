@@ -7,7 +7,6 @@ const ResultDisplay = ({ metadata, videoUrl }) => {
     console.log("Video URL:", videoUrl);
   }, [metadata, videoUrl]);
 
-  if (!metadata && !videoUrl) return null;
 
   return (
     <div className="mt-10 w-full max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-lg border border-gray-200">

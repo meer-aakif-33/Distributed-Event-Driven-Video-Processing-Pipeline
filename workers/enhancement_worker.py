@@ -7,7 +7,7 @@ import cv2
 RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'video_tasks'
 FASTAPI_STATUS_URL = 'http://localhost:8000/internal/video-enhancement-status'
-STORAGE_PATH = './static/storage'
+STORAGE_PATH = './static/storage'  # corrected to match FastAPI
 
 def enhance_video(video_path, output_path):
     cap = cv2.VideoCapture(video_path)
@@ -27,7 +27,7 @@ def enhance_video(video_path, output_path):
     cap.release()
     out.release()
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # Go up one level
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
 
 def extract_metadata(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -49,25 +49,26 @@ def extract_metadata(video_path):
 def callback(ch, method, properties, body):
     try:
         data = json.loads(body)
-        print(f"Incoming message: {data}")
+        print(f"[Incoming message] {data}")
 
         raw_path = data.get("filepath")
         video_id = data.get("video_id")
 
         normalized_path = os.path.normpath(os.path.join(PROJECT_ROOT, raw_path))
         
-        print(f"Looking for: {normalized_path}")
-        print(f"Current working directory: {os.getcwd()}")
+        print(f"[Looking for] {normalized_path}")
+        print(f"[Current working directory] {os.getcwd()}")
 
         if os.path.exists(normalized_path):
             metadata = extract_metadata(normalized_path)
-
+            # Create output path for enhanced video
             enhanced_output_path = normalized_path.replace(".mp4", "_enhanced.mp4")
             enhanced_filename = os.path.basename(enhanced_output_path)
 
+            # Actually enhance the video
             enhance_video(normalized_path, enhanced_output_path)
 
-            print(f"Enhancement complete. Saved to: {enhanced_output_path}")
+            print(f"[Enhancement complete] Saved to: {enhanced_output_path}")
 
             try:
                 res = requests.post(FASTAPI_STATUS_URL, json={
@@ -79,7 +80,7 @@ def callback(ch, method, properties, body):
             except Exception as e:
                 print("Failed to notify FastAPI:", e)
         else:
-            print(f"Video not found at path: {normalized_path}")
+            print(f"[Video not found] Path: {normalized_path}")
 
     except Exception as err:
         print("Error while handling task:", err)
@@ -89,7 +90,7 @@ def callback(ch, method, properties, body):
 def main():
     connection = pika.BlockingConnection(pika.ConnectionParameters(RABBITMQ_HOST))
     channel = connection.channel()
-    channel.exchange_declare(exchange='video_tasks', exchange_type='fanout')
+    exchange = channel.exchange_declare(exchange='video_tasks', exchange_type='fanout')
     result = channel.queue_declare(queue='', exclusive=True)
     queue_name = result.method.queue
 
@@ -97,7 +98,7 @@ def main():
 
     channel.basic_consume(queue=queue_name, on_message_callback=callback, auto_ack=True)
 
-    print("Enhancement Worker is ready. Waiting for tasks...")
+    print("[Enhancement Worker is ready] Waiting for tasks...")
     channel.start_consuming()
 
 if __name__ == "__main__":

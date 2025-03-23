@@ -15,9 +15,9 @@ const App = () => {
 
   useEffect(() => {
     console.log("State changed:");
-    console.log("videoId:", videoId);
-    console.log("metadata:", metadata);
-    console.log("enhancedVideoUrl:", enhancedVideoUrl);
+    console.log("   videoId:", videoId);
+    console.log("   metadata:", metadata);
+    console.log("   enhancedVideoUrl:", enhancedVideoUrl);
   }, [videoId, metadata, enhancedVideoUrl]);
 
   const handleUpload = async (file) => {
