@@ -21,63 +21,59 @@ const App = () => {
   }, [videoId, metadata, enhancedVideoUrl]);
 
   const handleUpload = async (file) => {
-    try {
-      console.log("Uploading file:", file.name);
-
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await axios.post("http://localhost:8000/upload", formData);
-
-      console.log("Upload response:", res.data);
-
-      const { video_id } = res.data;
-      setVideoId(video_id);
-      connectWebSocket(video_id);
-    } catch (error) {
-      console.error("Error uploading video:", error);
-    }
-  };
-
-  const connectWebSocket = (video_id) => {
-    console.log("Trying to connect WebSocket for:", video_id);
-    const ws = new WebSocket(`ws://localhost:8000/ws?video_id=${video_id}`);
-
-    ws.onopen = () => {
-      console.log("WebSocket connected for:", video_id);
-    };
-
-    ws.onmessage = (event) => {
-      console.log("Raw WebSocket message received:", event.data);
-
+    return new Promise(async (resolve, reject) => {
       try {
-        const data = JSON.parse(event.data);
-        console.log("Parsed WebSocket data:", data);
-
-        if (data.message === "Processing complete!") {
-          console.log("Received final processing completion signal.");
-          console.log("Metadata:", data.metadata);
-          console.log("Enhanced video URL:", data.enhanced_video_url);
-
-          setMetadata(data.metadata);
-          setEnhancedVideoUrl(`${data.enhanced_video_url}`);
-        } else {
-          console.log("WebSocket message (non-final):", data);
-        }
-      } catch (err) {
-        console.error("Failed to parse WebSocket message:", err);
+        console.log("Uploading file:", file.name);
+  
+        const formData = new FormData();
+        formData.append("file", file);
+  
+        const res = await axios.post("http://localhost:8000/upload", formData);
+        console.log("Upload response:", res.data);
+  
+        const { video_id } = res.data;
+        setVideoId(video_id);
+  
+        // WebSocket connection that resolves when processing is done
+        const ws = new WebSocket(`ws://localhost:8000/ws?video_id=${video_id}`);
+  
+        ws.onopen = () => {
+          console.log("WebSocket connected for:", video_id);
+        };
+  
+        ws.onmessage = (event) => {
+          console.log("Raw WebSocket message received:", event.data);
+  
+          try {
+            const data = JSON.parse(event.data);
+            console.log("Parsed WebSocket data:", data);
+  
+            if (data.message === "Processing complete!") {
+              setMetadata(data.metadata);
+              setEnhancedVideoUrl(`${data.enhanced_video_url}`);
+              ws.close();
+              resolve(); // This ends the spinner!
+            }
+          } catch (err) {
+            console.error("Failed to parse WebSocket message:", err);
+          }
+        };
+  
+        ws.onerror = (e) => {
+          console.error("WebSocket error:", e);
+          reject(e);
+        };
+  
+        ws.onclose = () => {
+          console.log("WebSocket connection closed.");
+        };
+      } catch (error) {
+        console.error("Error uploading video:", error);
+        reject(error);
       }
-    };
-
-    ws.onerror = (e) => {
-      console.error("WebSocket error:", e);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket connection closed.");
-    };
+    });
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <h1 className="text-3xl font-bold text-center mb-6">Video Processor</h1>
