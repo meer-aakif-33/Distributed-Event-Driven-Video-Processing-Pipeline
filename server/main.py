@@ -81,3 +81,19 @@ async def publish_to_rabbitmq(payload: dict):
         await connection.close()
     except Exception as e:
         print(f"[ERROR] RabbitMQ publish failed: {e}")
+
+# Add WebSocket Endpoint for Updates
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, video_id: str):
+    await websocket.accept()
+    if video_id not in client_states:
+        await websocket.send_json({"error": "Invalid video_id"})
+        await websocket.close()
+        return
+    client_states[video_id]["websocket"] = websocket
+    await websocket.send_json({"message": "WebSocket connected."})
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        client_states[video_id]["websocket"] = None
