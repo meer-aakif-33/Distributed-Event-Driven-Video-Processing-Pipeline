@@ -118,5 +118,8 @@ npm run dev
 🔹 **Backend:** FastAPI, Uvicorn, RabbitMQ, OpenCV, Python 🔹 **Frontend:** React, Vite, Tailwind CSS 🔹 **Message Queue:** RabbitMQ (Local) 🔹 **Workers:** Python (async tasks)
 
 ---
+![image](https://github.com/user-attachments/assets/9515222d-b9a5-443e-a337-c9ae79826d4b)
+![image](https://github.com/user-attachments/assets/eacc7be3-74f3-4b3d-b033-c3a7ca5af668)
+![image](https://github.com/user-attachments/assets/697a8c19-d569-48bb-9f7b-192cf6b88359)
 
 
