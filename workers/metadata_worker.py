@@ -7,9 +7,13 @@ import cv2
 RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'video_tasks'
 FASTAPI_STATUS_URL = 'http://localhost:8000/internal/metadata-extraction-status'
-STORAGE_PATH = './static/storage'
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
+# Ensure absolute path to `/video-pipeline/static/storage`
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # Move up one level to `/video-pipeline`
+STORAGE_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "static", "storage"))
+
+# Ensure storage directory exists
+os.makedirs(STORAGE_PATH, exist_ok=True)
 
 def extract_metadata(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -39,8 +43,9 @@ def callback(ch, method, properties, body):
         raw_path = data.get("filepath")
         video_id = data.get("video_id")
 
-        normalized_path = os.path.normpath(os.path.join(PROJECT_ROOT, raw_path))
-        
+        normalized_path = os.path.normpath(os.path.join(STORAGE_PATH, os.path.basename(raw_path)))
+
+
         print(f"[Looking for] {normalized_path}")
         print(f"[Current working directory] {os.getcwd()}")
 

@@ -7,7 +7,7 @@ import cv2
 RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'video_tasks'
 FASTAPI_STATUS_URL = 'http://localhost:8000/internal/video-enhancement-status'
-STORAGE_PATH = './static/storage'  # corrected to match FastAPI
+# STORAGE_PATH = './static/storage'  # corrected to match FastAPI
 
 def enhance_video(video_path, output_path):
     cap = cv2.VideoCapture(video_path)
@@ -28,6 +28,7 @@ def enhance_video(video_path, output_path):
     out.release()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
+STORAGE_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "static", "storage"))
 
 def extract_metadata(video_path):
     cap = cv2.VideoCapture(video_path)

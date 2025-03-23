@@ -12,14 +12,24 @@ from pathlib import Path
 
 
 # Ensure directory exists
-STORAGE_DIR = "static/storage"
+STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../static/storage")
 os.makedirs(STORAGE_DIR, exist_ok=True)
 
 # App Setup
 app = FastAPI()
 
-# Static Files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Get the absolute path of the project root (where "server" is located)
+project_root = os.path.dirname(os.path.abspath(__file__))  # This points to 'server'
+static_dir = os.path.join(project_root, "..", "static")  # Moves one level up
+
+# Ensure the static folder exists
+if not os.path.exists(static_dir):
+    os.makedirs(static_dir)
+
+# Mount the static directory
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
 
 # Allow frontend on localhost:5173
 app.add_middleware(
