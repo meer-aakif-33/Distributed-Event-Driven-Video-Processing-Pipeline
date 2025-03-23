@@ -1,3 +1,4 @@
+#Initialize FastAPI Application
 from fastapi import Request, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -34,6 +35,7 @@ RABBITMQ_URL = "amqp://guest:guest@localhost/"
 # In-memory store to track each video client and status
 client_states = {}
 
+# Middleware for Request Logging
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     print(f"[REQUEST] {request.method} {request.url}")
@@ -41,11 +43,12 @@ async def log_requests(request: Request, call_next):
     print(f"[RESPONSE] {request.method} {request.url} -> {response.status_code}")
     return response
 
-
+# Root Endpoint
 @app.get("/")
 def root():
     return {"message": "Server is running"}
 
+# Video Streaming Endpoint
 @app.get("/video/{filename}")
 def stream_video(filename: str, request: Request):
     video_path = f"static/storage/{filename}"
@@ -112,7 +115,7 @@ async def enhancement_status_update(request: Request):
     client_states[video_id]["enhanced_filename"] = enhanced_filename
     return {"message": "Enhancement status updated."}
 
-# Add Internal Metadata Extraction Update Endpoint
+# Internal Metadata Extraction Update Endpoint
 @app.post("/internal/metadata-extraction-status")
 async def metadata_status_update(request: Request):
     data = await request.json()
@@ -123,4 +126,6 @@ async def metadata_status_update(request: Request):
     client_states[video_id]["status"]["metadata"] = True
     client_states[video_id]["metadata"] = metadata
     return {"message": "Metadata status updated."}
+
+
 
