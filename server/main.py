@@ -111,3 +111,16 @@ async def enhancement_status_update(request: Request):
     client_states[video_id]["enhancement_metadata"] = metadata
     client_states[video_id]["enhanced_filename"] = enhanced_filename
     return {"message": "Enhancement status updated."}
+
+# Add Internal Metadata Extraction Update Endpoint
+@app.post("/internal/metadata-extraction-status")
+async def metadata_status_update(request: Request):
+    data = await request.json()
+    video_id = data.get("video_id")
+    metadata = data.get("metadata", {})
+    if video_id not in client_states:
+        return JSONResponse({"error": "Invalid video_id"}, status_code=400)
+    client_states[video_id]["status"]["metadata"] = True
+    client_states[video_id]["metadata"] = metadata
+    return {"message": "Metadata status updated."}
+
