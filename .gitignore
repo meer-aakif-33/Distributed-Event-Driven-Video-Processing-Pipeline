@@ -1,0 +1,48 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.db
+*.sqlite3
+*.log
+
+# Virtual environment
+myenv/
+venv/
+.env/
+*.env
+
+# Node.js
+node_modules/
+
+# React build output
+/build/
+dist/
+
+# VSCode settings
+.vscode/
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# FastAPI static file storage
+static/storage/
+
+# RabbitMQ temporary files
+*.pid
+*.sock
+
+# Pytest cache
+.cache/
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Miscellaneous
+*.swp
+*.swo
