@@ -70,3 +70,14 @@ async def upload_video(file: UploadFile = File(...)):
     return JSONResponse({"video_id": video_id, "message": "Video uploaded successfully"})
 
 
+# Add RabbitMQ Task Publishing
+async def publish_to_rabbitmq(payload: dict):
+    try:
+        connection = await aio_pika.connect_robust(RABBITMQ_URL)
+        channel = await connection.channel()
+        exchange = await channel.declare_exchange("video_tasks", aio_pika.ExchangeType.FANOUT)
+        message = aio_pika.Message(body=json.dumps(payload).encode())
+        await exchange.publish(message, routing_key="")
+        await connection.close()
+    except Exception as e:
+        print(f"[ERROR] RabbitMQ publish failed: {e}")
