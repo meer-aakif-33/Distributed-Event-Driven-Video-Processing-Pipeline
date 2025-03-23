@@ -8,27 +8,57 @@ RABBITMQ_HOST = 'localhost'
 QUEUE_NAME = 'video_tasks'
 FASTAPI_STATUS_URL = 'http://localhost:8000/internal/video-enhancement-status'
 # STORAGE_PATH = './static/storage'  # corrected to match FastAPI
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
+STORAGE_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "static", "storage"))
 
 def enhance_video(video_path, output_path):
     cap = cv2.VideoCapture(video_path)
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    fps = 24
-    width = int(cap.get(3))
-    height = int(cap.get(4))
-    out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
 
+    if not cap.isOpened():
+        print(f"Failed to open video: {video_path}")
+        return
+
+    # Original properties
+    original_fps = cap.get(cv2.CAP_PROP_FPS)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # Change FPS to a new value (e.g., 15)
+    new_fps = 15.0
+
+    if original_fps == 0 or width == 0 or height == 0:
+        print(f"[Error] Invalid video properties: {original_fps=} {width=} {height=}")
+        return
+
+    # Setup VideoWriter with new FPS
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(output_path, fourcc, new_fps, (width, height))
+
+    frame_count = 0
     while True:
         ret, frame = cap.read()
         if not ret:
             break
+
+        # Enhancement logic: brightness + contrast
         enhanced_frame = cv2.convertScaleAbs(frame, alpha=1.2, beta=20)
         out.write(enhanced_frame)
+        frame_count += 1
 
     cap.release()
     out.release()
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))  # <-- go up one level
-STORAGE_PATH = os.path.abspath(os.path.join(PROJECT_ROOT, "static", "storage"))
+    print(f"[Enhanced] {output_path} with {frame_count} frames at {new_fps} FPS")
+
+
+def validate_video(path):
+    cap = cv2.VideoCapture(path)
+    if cap.isOpened():
+        print(f"{path} opened successfully. Duration: {cap.get(cv2.CAP_PROP_FRAME_COUNT)} frames")
+    else:
+        print(f"Failed to open {path}")
+    cap.release()
+
 
 def extract_metadata(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -68,13 +98,14 @@ def callback(ch, method, properties, body):
 
             # Actually enhance the video
             enhance_video(normalized_path, enhanced_output_path)
+            enhanced_metadata = extract_metadata(enhanced_output_path)
 
             print(f"[Enhancement complete] Saved to: {enhanced_output_path}")
 
             try:
                 res = requests.post(FASTAPI_STATUS_URL, json={
                     "video_id": video_id,
-                    "metadata": metadata,
+                    "metadata": enhanced_metadata,
                     "enhanced_filename": enhanced_filename
                 })
                 print("Metadata sent:", res.text)
