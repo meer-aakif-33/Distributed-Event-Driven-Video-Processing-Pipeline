@@ -1,4 +1,3 @@
-# Commit: Initialize FastAPI Application
 from fastapi import Request, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -34,3 +33,10 @@ RABBITMQ_URL = "amqp://guest:guest@localhost/"
 
 # In-memory store to track each video client and status
 client_states = {}
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    print(f"[REQUEST] {request.method} {request.url}")
+    response = await call_next(request)
+    print(f"[RESPONSE] {request.method} {request.url} -> {response.status_code}")
+    return response
