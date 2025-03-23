@@ -97,3 +97,17 @@ async def websocket_endpoint(websocket: WebSocket, video_id: str):
             await websocket.receive_text()
     except WebSocketDisconnect:
         client_states[video_id]["websocket"] = None
+
+# Internal Enhancement Status Update Endpoint
+@app.post("/internal/video-enhancement-status")
+async def enhancement_status_update(request: Request):
+    data = await request.json()
+    video_id = data.get("video_id")
+    metadata = data.get("metadata", {})
+    enhanced_filename = data.get("enhanced_filename")
+    if video_id not in client_states:
+        return JSONResponse({"error": "Invalid video_id"}, status_code=400)
+    client_states[video_id]["status"]["enhancement"] = True
+    client_states[video_id]["enhancement_metadata"] = metadata
+    client_states[video_id]["enhanced_filename"] = enhanced_filename
+    return {"message": "Enhancement status updated."}
