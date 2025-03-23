@@ -29,8 +29,6 @@ dist/
 # Windows
 Thumbs.db
 
-# FastAPI static file storage
-static/storage/
 
 # RabbitMQ temporary files
 *.pid
