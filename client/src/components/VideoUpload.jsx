@@ -65,7 +65,7 @@ const VideoUpload = ({ onUpload }) => {
                   d="M4 12a8 8 0 018-8v8z"
                 />
               </svg>
-              Uploading...
+              Processing...
             </span>
           ) : (
             "Upload"
