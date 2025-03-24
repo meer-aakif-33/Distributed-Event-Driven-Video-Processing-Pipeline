@@ -9,9 +9,9 @@ This project is a **video processing pipeline** built with **FastAPI (backend) a
 /video-pipeline
 │── server/                # Backend (FastAPI)
 │   ├── main.py            # FastAPI application
-│   ├── workers/           # Background workers
-│   │   ├── metadata_worker.py
-│   │   ├── enhancement_worker.py
+├── workers/           # Background workers
+│    ├── metadata_worker.py
+│    ├── enhancement_worker.py
 │── client/                # Frontend (React with Vite)
 │   ├── src/
 │   │   ├── components/    # React components
