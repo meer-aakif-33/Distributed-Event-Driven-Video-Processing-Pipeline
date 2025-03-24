@@ -35,7 +35,9 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 # Allow frontend on localhost:5173
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Allow from frontend on localhost
+    allow_origins=["http://localhost:5173",
+                    "http://localhost:5174",
+                    "http://localhost:5175"],  # Allow from frontend on localhost   
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
