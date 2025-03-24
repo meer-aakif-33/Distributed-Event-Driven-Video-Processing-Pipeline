@@ -6,5 +6,6 @@ requests
 pika
 opencv-python
 python-multipart
+aiofiles
 
 
