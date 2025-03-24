@@ -37,6 +37,16 @@ cd Distributed-Event-Driven-Video-Processing-Pipeline
 ```
 ## 🏗 Setup & Installation
 
+#### **Run RabbitMQ Locally**
+
+Make sure RabbitMQ is installed and running:
+
+```bash
+# Start RabbitMQ service
+sudo systemctl start rabbitmq-server
+rabbitmq-plugins enable rabbitmq_management #on windows
+
+```
 ## Step 0 Create a python env and activate it
 
 ```
@@ -55,14 +65,7 @@ cd server
 pip install -r requirements.txt
 ```
 
-#### **Run RabbitMQ Locally**
 
-Make sure RabbitMQ is installed and running:
-
-```bash
-# Start RabbitMQ service
-sudo systemctl start rabbitmq-server
-```
 
 #### **Start FastAPI Server**
 
