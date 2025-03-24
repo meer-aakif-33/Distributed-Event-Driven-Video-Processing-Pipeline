@@ -43,11 +43,22 @@ Make sure RabbitMQ is installed and running:
 
 ```bash
 # Start RabbitMQ service
-sudo systemctl start rabbitmq-server
+sudo systemctl start rabbitmq-server #on Ubuntu/Linux
 rabbitmq-plugins enable rabbitmq_management #on windows
-
 ```
-## Step 0 Create a python env and activate it
+Once it’s running:
+
+- Visit: http://localhost:15672
+
+- Login with default credentials:
+
+
+```bash
+    #for running locally below credentials should suffice
+    Username: guest
+    Password: guest
+```
+## Now create a python env and activate it
 
 ```
 cd server
@@ -77,7 +88,7 @@ uvicorn main:app --reload
 
 ### 2️⃣ Worker Setup (Metadata & Enhancement)
 
-Start two separate background workers for processing**s(open two separate terminals for two workers)**:
+Start two separate background workers for processings **(open two separate terminals for two workers)**:
 
 ```bash
 # Start metadata worker

@@ -18,6 +18,7 @@ os.makedirs(STORAGE_DIR, exist_ok=True)
 # App Setup
 app = FastAPI()
 
+client_states = {}
 
 # Get the absolute path of the project root (where "server" is located)
 project_root = os.path.dirname(os.path.abspath(__file__))  # This points to 'server'
@@ -106,6 +107,7 @@ async def publish_to_rabbitmq(payload: dict):
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, video_id: str):
+    print("[INIT] /ws route loaded.")
     print(f"[WS] WebSocket request for video_id: {video_id}")
     await websocket.accept()
 
@@ -176,7 +178,7 @@ async def enhancement_status_update(request: Request):
     enhanced_filename = data.get("enhanced_filename")
 
     print(f"[ENHANCEMENT] Received enhancement update for video_id: {video_id}")
-
+    print("[DEBUG] Current client_states:", client_states)
     if video_id not in client_states:
         return JSONResponse({"error": "Invalid video_id"}, status_code=400)
 
