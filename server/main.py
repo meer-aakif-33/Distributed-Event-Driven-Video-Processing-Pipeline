@@ -1,6 +1,6 @@
 from fastapi import Request, FastAPI, UploadFile, File, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 import aiofiles
 import aio_pika
@@ -160,9 +160,7 @@ async def maybe_notify_client(video_id: str):
                         "enhancement": state.get("enhancement_metadata", {}),
                         "metadata_extraction": state.get("metadata", {}),
                     },
-
-                    "enhanced_video_url": f"http://localhost:8000/video/{state['enhanced_filename']}"
-
+                    "enhanced_video_url": f"http://localhost:8000/stream/{state['enhanced_filename']}"
                 })
                 print(f"[MAYBE_NOTIFY] Notification sent for {video_id}")
             except Exception as e:
@@ -229,3 +227,105 @@ async def download_video(filename: str):
         }
     )
 
+@app.get("/stream/{filename}")
+async def stream_video(request: Request, filename: str):
+    """Stream video with full range request support for seeking"""
+    video_path = os.path.join(STORAGE_DIR, filename)
+    
+    print(f"[STREAM] Requested: {filename}")
+    print(f"[STREAM] Resolved path: {video_path}")
+    
+    if not os.path.exists(video_path):
+        print("[ERROR] File not found.")
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_size = os.path.getsize(video_path)
+    
+    # Handle range requests
+    range_header = request.headers.get("range")
+    
+    if range_header:
+        # Parse range header (e.g., "bytes=0-1023")
+        try:
+            range_value = range_header.replace("bytes=", "")
+            start, end = range_value.split("-")
+            start = int(start)
+            end = int(end) if end else file_size - 1
+            
+            if start > end or start >= file_size or end >= file_size:
+                raise ValueError("Invalid range")
+            
+            content_length = end - start + 1
+            
+            print(f"[STREAM] Range request: bytes {start}-{end}/{file_size}")
+            
+            async def range_stream():
+                async with aiofiles.open(video_path, "rb") as f:
+                    await f.seek(start)
+                    bytes_remaining = content_length
+                    chunk_size = 1024 * 256  # 256KB chunks
+                    while bytes_remaining > 0:
+                        read_size = min(chunk_size, bytes_remaining)
+                        chunk = await f.read(read_size)
+                        if not chunk:
+                            break
+                        yield chunk
+                        bytes_remaining -= len(chunk)
+            
+            return StreamingResponse(
+                range_stream(),
+                status_code=206,
+                media_type="video/mp4",
+                headers={
+                    "Content-Range": f"bytes {start}-{end}/{file_size}",
+                    "Content-Length": str(content_length),
+                    "Accept-Ranges": "bytes",
+                    "Content-Type": "video/mp4",
+                    "Cache-Control": "no-cache",
+                }
+            )
+        except (ValueError, IndexError):
+            print("[STREAM] Invalid range request, serving full file")
+    
+    # Serve full file
+    print(f"[STREAM] Serving full file: {file_size} bytes")
+    return FileResponse(
+        video_path,
+        media_type="video/mp4",
+        headers={
+            "Content-Length": str(file_size),
+            "Accept-Ranges": "bytes",
+            "Cache-Control": "no-cache",
+        }
+    )
+
+@app.get("/video/{filename}")
+async def stream_video_legacy(request: Request, filename: str):
+    """Legacy endpoint - redirects to new /stream endpoint"""
+    return await stream_video(request, filename)
+
+@app.get("/status/{video_id}")
+async def get_processing_status(video_id: str):
+    """Get real-time processing status for a video"""
+    if video_id not in client_states:
+        return JSONResponse({"error": "Invalid video_id"}, status_code=404)
+    
+    state = client_states[video_id]
+    return {
+        "video_id": video_id,
+        "filename": state.get("filename"),
+        "status": state.get("status", {}),
+        "enhancement_metadata": state.get("enhancement_metadata", {}),
+        "metadata": state.get("metadata", {}),
+        "enhanced_filename": state.get("enhanced_filename"),
+        "timestamp": datetime.now().isoformat()
+    }
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "active_processing": len([v for v in client_states.values() if not v["status"]["enhancement"] or not v["status"]["metadata"]])
+    }
